@@ -1,5 +1,6 @@
 import xgboost as xgb
 from sklearn.ensemble import RandomForestRegressor
+from catboost import CatBoostRegressor
 
 
 def train_xgboost_model(X_train, y_train, X_test, y_test, params=None):
@@ -71,4 +72,34 @@ def train_random_forest_model(X_train, y_train, params=None):
     print("\nTraining Random Forest model...")
     model.fit(X_train, y_train)
 
+    return model
+
+
+def train_catboost_model(X_train, y_train, X_val, y_val, params=None):
+    """
+    Train CatBoost model.
+    """
+    if params is None:
+        params = {
+            "loss_function": "RMSE",
+            "eval_metric": "RMSE",
+            "depth": 8,
+            "learning_rate": 0.05,
+            "l2_leaf_reg": 3.0,
+            "subsample": 0.8,
+            "random_strength": 1.0,
+            "bagging_temperature": 0.5,
+            "iterations": 2000,  # high cap; use early stopping
+            "early_stopping_rounds": 100,
+            "random_seed": 42,
+            "allow_writing_files": False,
+            "verbose": False,
+        }
+
+    model = CatBoostRegressor(**params)
+    model.fit(
+        X_train, y_train,
+        eval_set=(X_val, y_val),
+        use_best_model=True,
+    )
     return model

@@ -3,7 +3,7 @@ from pathlib import Path
 from .data_preprocessing import combine_multiple_files, clean_sensor_data
 from .features import create_features
 from .split import prepare_data
-from .models import train_xgboost_model, train_random_forest_model
+from .models import train_xgboost_model, train_random_forest_model, train_catboost_model
 from .evaluate import evaluate_model
 from .tune import run_study
 
@@ -34,6 +34,14 @@ if __name__ == "__main__":
     # Train Random Forest
     rf_model = train_random_forest_model(X_train, y_train)
     rf_metrics = evaluate_model(rf_model, "Random Forest", X_train, y_train, X_test, y_test, feature_names)
+
+    # Train CatBoost model
+    split_val = int(len(X_train) * 0.9)
+    cb_model = train_catboost_model(
+        X_train.iloc[:split_val], y_train.iloc[:split_val],
+        X_train.iloc[split_val:], y_train.iloc[split_val:]
+    )
+    cb_metrics = evaluate_model(cb_model, "CatBoost", X_train, y_train, X_test, y_test, feature_names)
 
     # Compare models
     # compare_models([xgb_metrics, rf_metrics])
