@@ -6,7 +6,7 @@ import numpy as np
 def combine_multiple_files(path):
     """Load multiple CSV files and combine them."""
     dfs = []
-    files = glob.glob(path)
+    files = sorted(glob.glob(path))
 
     for file in files:
         df = pd.read_csv(file)

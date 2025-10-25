@@ -11,7 +11,7 @@ def objective_factory(X_train, y_train):
             "objective": "reg:squarederror",
             "tree_method": "hist",
             "random_state": 42,
-            "n_jobs": -1,
+            "n_jobs": 1,
             "max_depth": trial.suggest_int("max_depth", 3, 10),
             "learning_rate": trial.suggest_float("learning_rate", 1e-3, 3e-1, log=True),
             "n_estimators": 2000,

@@ -21,7 +21,7 @@ if __name__ == "__main__":
     X_train, X_test, y_train, y_test, feature_names = prepare_data(df_with_features)
 
     # Retrieve the best parameter values
-    study = run_study(X_train, y_train, n_trials=10)
+    study = run_study(X_train, y_train, n_trials=40)
     best_params = study.best_params
     print(f"\nBest parameters: {best_params}")
     # vis.plot_param_importances(study).show()

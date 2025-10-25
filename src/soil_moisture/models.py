@@ -28,13 +28,17 @@ def train_xgboost_model(X_train, y_train, X_test, y_test, params=None):
     for key, value in params.items():
         print(f"  {key}: {value}")
 
-    model = xgb.XGBRegressor(**params, eval_metric="rmse")
+    split_val = int(len(X_train) * 0.9)
+    X_tr, X_val = X_train.iloc[:split_val], X_train.iloc[split_val:]
+    y_tr, y_val = y_train.iloc[:split_val], y_train.iloc[split_val:]
+
+    model = xgb.XGBRegressor(**params, eval_metric="rmse", n_estimators=2000, early_stopping_rounds=100)
 
     print("\nTraining XGBoost model...")
     model.fit(
         X_train, y_train,
-        eval_set=[(X_train, y_train), (X_test, y_test)],
-        verbose=50
+        eval_set=[(X_tr, y_tr), (X_val, y_val)],
+        verbose=False
     )
 
     return model
