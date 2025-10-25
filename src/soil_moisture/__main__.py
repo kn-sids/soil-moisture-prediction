@@ -1,11 +1,11 @@
 import optuna.visualization as vis
-from data_preprocessing import combine_multiple_files, clean_sensor_data
-from features import create_features
-from split import prepare_data
-from models import train_xgboost_model, train_random_forest_model
-from evaluate import evaluate_model
 from pathlib import Path
-from tune import run_study
+from .data_preprocessing import combine_multiple_files, clean_sensor_data
+from .features import create_features
+from .split import prepare_data
+from .models import train_xgboost_model, train_random_forest_model
+from .evaluate import evaluate_model
+from .tune import run_study
 
 
 if __name__ == "__main__":
