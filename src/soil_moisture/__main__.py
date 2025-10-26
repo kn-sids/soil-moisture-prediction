@@ -1,7 +1,7 @@
 import optuna.visualization as vis
 from pathlib import Path
 from .data_preprocessing import combine_multiple_files, clean_sensor_data
-from .features import create_features
+from .features import create_features, add_forecast_features
 from .split import prepare_data
 from .models import train_xgboost_model, train_random_forest_model, train_catboost_model
 from .evaluate import evaluate_model
@@ -18,10 +18,12 @@ if __name__ == "__main__":
     combined_data = combine_multiple_files(file_path)
     cleaned_data = clean_sensor_data(combined_data)
     df_with_features = create_features(cleaned_data)
-    X_train, X_test, y_train, y_test, feature_names = prepare_data(df_with_features)
+    df_with_features = df_with_features.sort_values('datetime').reset_index(drop=True)
+    supervised = add_forecast_features(df_with_features, horizon=1, lags=(1, 6, 12, 72), roll_windows=(6, 24, 72))
+    X_train, X_test, y_train, y_test, feature_names = prepare_data(supervised, test_size=0.2)
 
     # Retrieve the best parameter values
-    study = run_study(X_train, y_train, n_trials=40)
+    study = run_study(X_train, y_train, n_trials=10)
     best_params = study.best_params
     print(f"\nBest parameters: {best_params}")
     # vis.plot_param_importances(study).show()

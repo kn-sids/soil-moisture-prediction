@@ -6,7 +6,7 @@ def prepare_data(df, target_col='soil_moisture_pct', test_size=0.2):
     df_sorted = df.sort_values('datetime').reset_index(drop=True)
 
     # 2) Build features/target FROM THE SORTED FRAME
-    exclude_cols = ['DATE','TIME','datetime', target_col, 'date_only','day','time_of_day']
+    exclude_cols = ['DATE','TIME','datetime', target_col, 'soil_moisture_pct', 'soil_moisture_raw', 'date_only','day','time_of_day']
     feature_cols = [c for c in df_sorted.columns if c not in exclude_cols]
 
     X = df_sorted[feature_cols]

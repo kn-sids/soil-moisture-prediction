@@ -48,3 +48,36 @@ def create_features(df):
     print(f"\nTotal features created: {len(feature_cols)}")
 
     return df
+
+
+def add_forecast_features(df, horizon=1, lags=(1, 6, 12, 72), roll_windows=(6, 24, 72)):
+    """
+    Convert to a supervised forecasting frame:
+      - target_future = soil_moisture_pct shifted -horizon (label at t is y_{t+h})
+      - use only *past* info via lags/rollings (no same-time leakage)
+    Assumes df is already sorted by 'datetime' ascending.
+    """
+    df = df.copy()
+
+    # future label
+    df['target_future'] = df['soil_moisture_pct'].shift(-horizon)
+
+    # lags (past only)
+    for k in lags:
+        df[f'soil_moisture_raw_lag_{k}'] = df['soil_moisture_raw'].shift(k)
+        df[f'soil_moisture_pct_lag_{k}'] = df['soil_moisture_pct'].shift(k)
+
+    # rolling means (past only)
+    for w in roll_windows:
+        df[f'soil_raw_rollmean_{w}'] = df['soil_moisture_raw'].rolling(w, min_periods=1).mean()
+        df[f'soil_pct_rollmean_{w}']  = df['soil_moisture_pct'].rolling(w, min_periods=1).mean()
+
+    # drop rows without full supervision window
+    first_valid = max(lags) if lags else 0
+    if horizon > 0:
+        df = df.iloc[first_valid: -horizon].copy()
+    else:
+        df = df.iloc[first_valid:].copy()
+
+    return df
+
