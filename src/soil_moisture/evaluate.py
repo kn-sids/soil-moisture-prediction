@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import shap
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 
@@ -111,6 +112,11 @@ def evaluate_model(model, model_name, X_train, y_train, X_test, y_test, feature_
     plt.tight_layout()
     plt.show()
 
+    try:
+        shap_summary_plots(model, X_train, X_test, model_name)
+    except Exception as e:
+        print(f"[SHAP] Skipped SHAP plots due to: {e}")
+
     return {
         'model_name': model_name,
         'train_rmse': train_rmse,
@@ -175,3 +181,50 @@ def compare_models(metrics_list):
     print(f"\nBest performing model: {best_model}")
     print(f"   Test R²: {comparison_df.loc[best_model_idx, 'test_r2']:.4f}")
     print(f"   Test RMSE: {comparison_df.loc[best_model_idx, 'test_rmse']:.4f}")
+
+
+def shap_summary_plots(model, X_train, X_test, model_name="Model", max_points=2000, save_prefix="shap"):
+    # Subsample test for plotting (avoid leakage: background from TRAIN only)
+    X_bg = X_train.sample(min(1000, len(X_train)), random_state=42)
+    Xs   = X_test.iloc[:max_points].copy()
+
+    try:
+        # Prefer TreeExplainer for tree-based models
+        explainer = shap.TreeExplainer(model)
+        # SHAP’s API differs by version; try new, then fallback to old
+        try:
+            sv = explainer(Xs, check_additivity=False)
+            values = sv.values
+            feature_names = sv.feature_names
+        except TypeError:
+            values = explainer.shap_values(Xs)
+            feature_names = list(Xs.columns)
+
+    except Exception:
+        # Fallback: model-agnostic explainer with a callable
+        explainer = shap.Explainer(model.predict, X_bg)
+        sv = explainer(Xs)
+        values = sv.values
+        feature_names = sv.feature_names
+
+    # 1) Beeswarm
+    plt.figure(figsize=(10, 6))
+    shap.plots.beeswarm(sv, show=False, max_display=20)
+    plt.title(f"{model_name} — SHAP summary (beeswarm)")
+    plt.tight_layout(); plt.savefig(f"{save_prefix}_{model_name}_beeswarm.png", dpi=200); plt.show()
+
+    # 2) Bar (global mean |SHAP|)
+    plt.figure(figsize=(8, 6))
+    shap.plots.bar(sv, show=False, max_display=20)
+    plt.title(f"{model_name} — SHAP global importance")
+    plt.tight_layout(); plt.savefig(f"{save_prefix}_{model_name}_bar.png", dpi=200); plt.show()
+
+    # 3) Dependence for the top feature
+    mean_abs = np.abs(values).mean(axis=0)
+    top_idx = int(np.argsort(mean_abs)[::-1][0])
+    top_feature = feature_names[top_idx]
+
+    plt.figure(figsize=(8, 6))
+    shap.plots.scatter(sv[:, top_feature], show=False)
+    plt.title(f"{model_name} — SHAP dependence: {top_feature}")
+    plt.tight_layout(); plt.savefig(f"{save_prefix}_{model_name}_dependence_{top_feature}.png", dpi=200); plt.show()
