@@ -96,10 +96,20 @@ def train_catboost_model(X_train, y_train, X_val, y_val, params=None):
             "verbose": False,
         }
 
+    print("\nModel Parameters:")
+    for key, value in params.items():
+        print(f"  {key}: {value}")
+
+    split_val = int(len(X_train) * 0.9)
+    X_tr, X_val = X_train.iloc[:split_val], X_train.iloc[split_val:]
+    y_tr, y_val = y_train.iloc[:split_val], y_train.iloc[split_val:]
+
     model = CatBoostRegressor(**params)
+
+    print("\nTraining XGBoost model...")
     model.fit(
         X_train, y_train,
-        eval_set=(X_val, y_val),
+        eval_set=[(X_tr, y_tr), (X_val, y_val)],
         use_best_model=True,
     )
     return model
